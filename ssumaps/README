@@ -1,0 +1,131 @@
+SONOMA STATE UNIVERSITY MAP KIT
+
+This is the new map code for the redeisgned SSU web site.  While the PHP and JavaScript code should
+be considered final (short of requirement changes by the Web Office), the actual content and styling 
+isn't even a rough draft.  The Web Office will add all of the campus template code, and modify the 
+style sheet to their liking.  Even the main map image will be replaced.
+
+A key point to this project is that you can run it with or without JavaScript.  Remember that when
+you edit the HTML and CSS.  You'll need to test it both ways.
+
+FILES
+
+	contact.php		The page intended to be used as a contact form.  Filling this out is up to the
+					Web Office, but I demonstrated how to get the location information into a form.
+	images/			All of the building images
+	locations.xml	An XML file detailing all of the location information.  The web admin need only
+					edit this file to add/update/delete locations on the map.
+	map_context.php	This is where most of the PHP code lives.  It parses the locations file, and
+					spits out digested information when requested.
+	map.css			The CSS file for the map-related elements.
+	map.jpg			The campus map
+	map.js			The JavaScript file for the dynamic maps.
+	maps.php		The intended entry point for requests.  You can rename this, of course.
+	pin.gif			The stick-pin image for the dynamic maps
+	wifi			The wifi coverage maps.
+
+SETTING UP THE MAPS
+
+	1.	When you update the map.jpg image file, you will also need to adjust the dimensions of the
+		.mapContainer style.  I can handle this dynamically in JavaScript, but in the no-JS
+		scenario this has to be hard-coded.
+
+	2.	Replace the pin.gif image.  It should be 40x40 pixels, with the 'point' in the center of 
+		the image, and a transparent background.  (The current image is a little off-center, and
+		ugly to boot.)
+		
+	3.	Edit the locations.xml file to add/modify locations.
+	
+	4.	Fill in the rest of maps.php with your web site headers, footers, layout, etc..
+	
+	5.  Edit the map.css file.
+	
+	6.	Build your contact form.  Other than the minuscule bit of PHP involved, you can build it
+		like you always do.
+
+PERFORMANCE
+
+	On my laptop, it takes PHP 3-6ms to render the page as it is now.  That includes loading the
+	include files, paring the locations, and generating the HTML.  I would expect that number to
+	increase slightly once the locations and HTML are all fully fleshed out, but should never 
+	exceed 10ms.
+
+----- GEEKY STUFF -----
+
+DESIGN REQUIREMENTS
+
+	- Clicking on the campus map should display an image of the building, description, directions,
+	  a list of departments housed there, and WiFi coverage maps if available.
+
+	- Two menus are to be provided, one to select a location by building, and another to select
+	  a location by department.
+
+	- The maps have to work in a no-JavaScript environment, which means rendering pages in
+	  PHP on the server.
+
+	- When JavaScript is available on the client side, then a more dynamic behavior is desired
+	  with fade-in tabbed boxes overlaying the campus map.
+
+	- Meet accessibility requirements.
+
+	- Run faster than the current implementation, which tended to 'stall' sometimes.
+	
+So basically, I had to write the application twice: once for static rendering by PHP and then again
+for dynamic behavior with JavaScript.
+
+SCALE
+
+There are a few dozen location entries, and perhaps a hundred or so departments.
+	
+CONSTRAINTS
+
+The campus web server is not really set up for PHP development.  In particular, this meant no 
+templating libraries.  I normally like to use Twig (or a similar tool) for a job like this, but 
+this time I had to do without.
+
+APPROACH
+
+I went totally flat-file on this job.  There is no need for a database when your entire working set
+fits onto a single disk read buffer.  A database and all of its overhead is just dead weight.
+
+I wanted the location editing to be very simple but expressive.  For myself, I would have chosen
+a JSON-encoded file for its brevity.  But the Web Office is more comfortable with XML, so that's
+what I used.  I used SimpleXML to parse the location file because the object it creates is 
+traversable -- I can use it like a regular object with properties (mostly).
+
+Without access to a good templating engine, I used the maps.php file as the template and pushed the
+bulk of the code into map_context.php.  You call map_context.php once to build the context you need, 
+then you call that object when you want specific information.
+
+The key to enabling the JavaScript implementation is setting a couple of global JS variables.  
+This was easily done by json-encoding the current location index and the entire location database.
+Once you have those two pieces of data in the namespace of your application, you can do anything
+you need with it, without resorting to AJAX to fetch data when you need it.
+
+SOME WORDS ABOUT THE PREVIOUS IMPLEMENTATION
+
+The previous implementation (which is still live at http://www.sonoma.edu/maps/maps.php) is
+thoroughly engineered as a database-driven site, except that it uses a CSV file as its source.  
+There's nothing wrong with this, except that (1) some of the data is not well-expressed as CSV
+and requires a lot of additional parsing and (2) there is no reason to invoke a bunch of abstract
+database overhead and (3) the campus server isn't optimized for PHP at all, so you can really feel
+the effect of #2.  The implementation even builds indexes, does file-mod-date checking, and pulls
+some other tricks to improve performance.  
+
+There is nothing appreciably wrong with the code at all.  But the implementation has problems:
+
+	- There are thousands of lines of PHP code for what amounts to a pretty small problem
+	- The app will stall sometimes, while it goes to disk for the dozen or so files it needs
+	- There is a ton of in-line styling, which needed to be removed to CSS files.
+	- There is no provision for spitting out the entire database in a way that can easily be used by
+	  JavaScript.
+	- There's some code related to statistical tracking that is obsolete, now that the campus uses
+	  Google Analytics.
+
+The previous developer optimized a bunch of things that weren't actually problems, and added layers 
+of abstraction and parsing for data that could have been more elegantly expressed.  It adds 
+complexity without a commensurate gain.  The end result is WAY more code and more files than what is
+called for in a project this size, too much IO, and a data format that has hidden complexities.
+
+For a MUCH larger data set, the approach would have made some sense.  For a 30k database, it is like
+putting racing tires on a cat.

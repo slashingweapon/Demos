@@ -1,0 +1,59 @@
+.mapContainer {
+	position: relative;
+	top: 0px;
+	left: 0px;
+	height: 530px;
+	width: 817px;
+}
+.mapImage {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+}
+.mapBounds {
+	border: 4px solid red;
+}
+.mapClear {
+	position: static;
+}
+.mapWiFi {
+	width: 200px;
+}
+
+.locationInformation {
+	position:absolute;
+	z-index:100;
+	background:white;
+	width: 300px;
+	height: 300px;
+	overflow: auto;
+}
+
+.locationInformation .tab-nav {
+	background-color: yellow;
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+}
+
+.locationInformation .tab-nav li {
+	display: inline;
+	margin: 5px;
+}
+
+.locationInformation .tab-nav li.current{
+	font-weight: bold;
+}
+
+.locationPin {
+	position:absolute;
+	z-index:99;
+}
+
+.locationClose {
+	float: right;
+}
+
+.locationWiFiMap {
+	width: 200px;
+}
