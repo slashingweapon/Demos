@@ -17,6 +17,13 @@ $(document).ready(function() {
 	}
 });
 
+/**
+ *	This is the click handler for the areas on the map.  Each area tag has an ID, which indicates
+ *	the specific area that was clicked.  From that ID we extract the data for that location from
+ *	the gLocations object.  Then we highlight the relevant area on the map, and build information
+ *	display.
+ *
+ */
 function areaClick(evt) {
 	evt.preventDefault();
 
@@ -24,12 +31,18 @@ function areaClick(evt) {
 	var index = $(this).attr('id').substr(5);
 	var loc = findLocationByIndex( index );
 	
+	// get rid the current location information, if it is present.
 	clearLocation();
 	
+	// The map coordinate data is usually encoded as strings, so we have to parse the numbers
+	// and do some math to find out our border boundaries.  We put the information about the
+	// location to the right of the location on the map, with the tops of both regions aligned.
 	var positionTop = parseInt(loc.bounds.top);
 	var positionLeft = parseInt(loc.bounds.left) + parseInt(loc.bounds.width);
 	var positionWidth = parseInt(loc.bounds.width);
 	var positionHeight = parseInt(loc.bounds.height);
+	
+	// build, position, hide, tabbulate, and then append the location information
 	
 	var locDescription = buildHtml(loc);
 	$(locDescription).css( {
@@ -40,9 +53,11 @@ function areaClick(evt) {
 	setupTabs(locDescription);
 	$('.mapContainer').append(locDescription);
 	
-	var pin = getPinNode('pin.gif', 'locationPin');
+	// build, position, hide, tabbulate, and then append the pin graphic.
 	// We know the pin is 40x40, and the tip of the pin is in the center of the graphic.
 	// Do the math appropriately.
+	
+	var pin = getPinNode('pin.gif', 'locationPin');
 	var pinWidth = 40;
 	var pinHeight = 40;
 	var pinTop = Math.round(parseInt(loc.bounds.top) + (parseInt(loc.bounds.height)/2) - (pinHeight/2));
@@ -53,17 +68,26 @@ function areaClick(evt) {
 	} );
 	$(pin).hide();
 	$('.mapContainer').append(pin);
-	
+
+	// Now fade in both the info div and the pin.	
 	$(pin).fadeIn()
 	$(locDescription).fadeIn();
 	
 }
 
+/*	If you click on the map, but outside any defined areas, we just clear the current location 
+ *	information.
+ */
 function defaultAreaClick(evt) {
 	evt.preventDefault();
 	clearLocation();
 }
 
+/*	There are two menus: one to pick a location by building name, and another to pick a location
+ *	by Service/Department.  Both of these menus use as their values the ID of the location.
+ *	When one of these menus is changed, we generate a click event on the corresponding map area.
+ *
+ */
 function areaMenuChange(evt) {
 	evt.preventDefault();
 
@@ -76,11 +100,17 @@ function areaMenuChange(evt) {
 	}
 }
 
+/*	To clear the location information currently diplayed, just find elements with the relevant
+ *	classes, and call remove().
+ */
 function clearLocation() {
 	$('.locationInformation').remove();
 	$('.locationPin').remove();
 }
 
+/*	Search through our array of locations for the location whose 'index' value is equal to 
+ *	indexName.
+ */
 function findLocationByIndex(indexName) {
 	var retval = null;
 	var locationArray = gLocations.location;
@@ -136,7 +166,9 @@ function buildHtml(loc) {
 	template = template.replace(/%directions%/g, loc.directions || " ");
 	retval.innerHTML = template;
 	
-	// now build the list of services
+	// now build the list of services.  An oddity of our data provider is that it can generate
+	// an empty object, a single item, or an array.  This is a side-effect of our shortcuts in
+	// PHP using SimpleXML for parsing and json_encode for encoding.
 	if (loc.service && !jQuery.isEmptyObject(loc.service)) {
 		// if the services is just one item, make it into an array
 		if(!jQuery.isArray(loc.service)) {
